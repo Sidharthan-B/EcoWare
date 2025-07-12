@@ -8,18 +8,17 @@ const SmartWarehouseTracker = () => {
   const [currentPage, setCurrentPage] = useState('intro');
   const [carbonCalcTime, setCarbonCalcTime] = useState(null);
   const [warehouseData, setWarehouseData] = useState([
-    { id: 1, name: 'Electricity', timestamp: '2024-01-15', unit: 5551, amount: 0, carbon: 0 },
-    { id: 2, name: 'Cardboard', timestamp: '2024-01-20', unit: 5498, amount: 0, carbon: 0 },
-    { id: 3, name: 'Packaging', timestamp: '2024-02-05', unit: 1217, amount: 0, carbon: 0 },
-    { id: 4, name: 'Fuel', timestamp: '2024-02-10', unit: 298, amount: 0, carbon: 0 },
-    { id: 5, name: 'Electricity', timestamp: '2024-02-15', unit: 1927, amount: 0, carbon: 0 }
+    { id: 1, name: 'Electricity', timestamp: '2024-01-15', unit: 0.5, amount: 0, carbon: 0, unitType: 'kWh' },
+    { id: 2, name: 'Cardboard', timestamp: '2024-01-20', unit: 0.5, amount: 0, carbon: 0, unitType: 'kg' },
+    { id: 3, name: 'Plastic Packaging', timestamp: '2024-02-05', unit: 0.3, amount: 0, carbon: 0, unitType: 'kg' },
+    { id: 4, name: 'Diesel', timestamp: '2024-02-10', unit: 2.68, amount: 0, carbon: 0, unitType: 'litres' }
   ]);
 
   // Emission reduction simulation state
   const [reductionFactors, setReductionFactors] = useState({
     electricity: 0,
     packaging: 0,
-    fuel: 0,
+    diesel: 0,
     cardboard: 0
   });
 
@@ -43,11 +42,34 @@ const SmartWarehouseTracker = () => {
           ? {
               ...item,
               amount: Math.max(0, item.amount + change),
-              carbon: Math.max(0, (item.amount + change) * item.unit * 0.001)
+              carbon: Math.max(0, calculateCarbonEmission(item.name, item.amount + change, item.unit))
             }
           : item
       )
     );
+  };
+
+  // Carbon emission calculation with proper factors
+  const calculateCarbonEmission = (itemName, amount, unit) => {
+    // Unit now contains the emission factor directly
+    return amount * unit;
+  };
+
+  // Helper function to get emission factor text
+  const getEmissionFactorText = (itemName) => {
+    const name = itemName.toLowerCase();
+    
+    if (name.includes('electricity')) {
+      return "0.5 kg CO₂/kWh";
+    } else if (name.includes('diesel')) {
+      return "2.68 kg CO₂/litre";
+    } else if (name.includes('cardboard')) {
+      return "0.5 kg CO₂/kg";
+    } else if (name.includes('plastic packaging')) {
+      return "0.3 kg CO₂/kg";
+    } else {
+      return "Variable";
+    }
   };
 
   const totalCarbon = warehouseData.reduce((sum, item) => sum + item.carbon, 0);
@@ -133,6 +155,12 @@ const SmartWarehouseTracker = () => {
     }
     return () => clearInterval(interval);
   }, [isSimulating]);
+
+  // Reset real-time simulation data
+  const resetSimulation = () => {
+    setRealTimeWarehouseData([]);
+    setIsSimulating(false);
+  };
 
   // Get processed data for real-time dashboard
   const recentRealTimeData = getRecentData();
@@ -476,10 +504,10 @@ const SmartWarehouseTracker = () => {
         </div>
         <div className="space-y-6 text-gray-600 text-lg">
           <p>
-            By monitoring and calculating carbon emissions from warehouse operations including electricity consumption, packaging materials, and fuel usage, you can optimize your logistics and reduce environmental impact.
+            By monitoring and calculating carbon emissions from warehouse operations including electricity consumption, packaging materials, and diesel usage, you can optimize your logistics and reduce environmental impact.
           </p>
           <p>
-            Track emissions from electricity, cardboard packaging, fuel consumption, and other warehouse activities. Our carbon calculator provides comprehensive insights into your facility's environmental footprint and suggests actionable improvements.
+            Track emissions from electricity, cardboard packaging, diesel consumption, and other warehouse activities. Our carbon calculator provides comprehensive insights into your facility's environmental footprint and suggests actionable improvements.
           </p>
           <p>
             Make data-driven decisions to create a more sustainable warehouse operation while maintaining efficiency and reducing costs through smart resource management.
@@ -514,7 +542,7 @@ const SmartWarehouseTracker = () => {
                 <th className="text-left py-4 px-4 text-gray-500 font-medium">#</th>
                 <th className="text-left py-4 px-4 text-gray-500 font-medium">name</th>
                 <th className="text-left py-4 px-4 text-gray-500 font-medium">timestamp</th>
-                <th className="text-left py-4 px-4 text-gray-500 font-medium">unit, kWh</th>
+                <th className="text-left py-4 px-4 text-gray-500 font-medium">Emission Factor</th>
                 <th className="text-left py-4 px-4 text-gray-500 font-medium">Amount</th>
                 <th className="text-left py-4 px-4 text-gray-500 font-medium">Carbon, kg</th>
               </tr>
@@ -525,7 +553,9 @@ const SmartWarehouseTracker = () => {
                   <td className="py-4 px-4 text-gray-600">{item.id}</td>
                   <td className="py-4 px-4 text-gray-800 font-medium">{item.name}</td>
                   <td className="py-4 px-4 text-gray-600">{item.timestamp}</td>
-                  <td className="py-4 px-4 text-gray-600">{item.unit.toLocaleString()}</td>
+                  <td className="py-4 px-4 text-gray-600">
+                    {getEmissionFactorText(item.name)}
+                  </td>
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-2">
                       <button
@@ -542,6 +572,7 @@ const SmartWarehouseTracker = () => {
                         <Plus className="w-4 h-4 text-gray-600" />
                       </button>
                     </div>
+                    <div className="text-xs text-gray-500 mt-1">{item.unitType}</div>
                   </td>
                   <td className="py-4 px-4 text-gray-800 font-medium">{item.carbon.toFixed(0)}</td>
                 </tr>
@@ -558,14 +589,14 @@ const SmartWarehouseTracker = () => {
           <h3 className="text-2xl font-bold text-gray-800 mb-6">Your carbon emission per operation</h3>
 
           <div className="bg-gray-50 rounded-lg p-6">
-            <div className="relative h-64">
-              <svg className="w-full h-full" viewBox="0 0 500 200">
+            <div className="relative h-80">
+              <svg className="w-full h-full" viewBox="0 0 500 280">
                 {/* Y-axis labels */}
                 {[0, 20, 40, 60, 80].map((value) => (
                   <g key={value}>
                     <text
                       x="30"
-                      y={190 - (value / maxValue) * 160}
+                      y={220 - (value / maxValue) * 160}
                       className="text-xs fill-gray-400"
                       textAnchor="end"
                     >
@@ -573,9 +604,9 @@ const SmartWarehouseTracker = () => {
                     </text>
                     <line
                       x1="40"
-                      y1={190 - (value / maxValue) * 160}
+                      y1={220 - (value / maxValue) * 160}
                       x2="460"
-                      y2={190 - (value / maxValue) * 160}
+                      y2={220 - (value / maxValue) * 160}
                       stroke="#e5e7eb"
                       strokeWidth="1"
                     />
@@ -587,7 +618,7 @@ const SmartWarehouseTracker = () => {
                   <text
                     key={index}
                     x={60 + index * 80}
-                    y="205"
+                    y="250"
                     className="text-xs fill-gray-400"
                     textAnchor="middle"
                   >
@@ -602,7 +633,7 @@ const SmartWarehouseTracker = () => {
                     <rect
                       key={index}
                       x={50 + index * 80}
-                      y={190 - height}
+                      y={220 - height}
                       width="40"
                       height={height}
                       fill="#10b981"
@@ -671,6 +702,12 @@ const SmartWarehouseTracker = () => {
                 className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
               >
                 Generate Sample Data
+              </button>
+              <button
+                onClick={resetSimulation}
+                className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+              >
+                Reset Simulation
               </button>
             </div>
             <div className="flex items-center space-x-4 text-sm text-gray-600">
@@ -1068,21 +1105,21 @@ const SmartWarehouseTracker = () => {
       const category = item.name.toLowerCase();
       if (category.includes('electricity')) {
         acc.electricity += item.carbon;
-      } else if (category.includes('packaging')) {
+      } else if (category.includes('plastic packaging')) {
         acc.packaging += item.carbon;
-      } else if (category.includes('fuel')) {
-        acc.fuel += item.carbon;
+      } else if (category.includes('diesel')) {
+        acc.diesel += item.carbon;
       } else if (category.includes('cardboard')) {
         acc.cardboard += item.carbon;
       }
       return acc;
-    }, { electricity: 0, packaging: 0, fuel: 0, cardboard: 0 });
+    }, { electricity: 0, packaging: 0, diesel: 0, cardboard: 0 });
 
     // Calculate reduced emissions based on sliders
     const reducedEmissions = {
       electricity: currentEmissions.electricity * (1 - reductionFactors.electricity / 100),
       packaging: currentEmissions.packaging * (1 - reductionFactors.packaging / 100),
-      fuel: currentEmissions.fuel * (1 - reductionFactors.fuel / 100),
+      diesel: currentEmissions.diesel * (1 - reductionFactors.diesel / 100),
       cardboard: currentEmissions.cardboard * (1 - reductionFactors.cardboard / 100)
     };
 
@@ -1097,8 +1134,8 @@ const SmartWarehouseTracker = () => {
     // Chart data for comparison
     const comparisonData = [
       { name: 'Electricity', current: currentEmissions.electricity, reduced: reducedEmissions.electricity },
-      { name: 'Packaging', current: currentEmissions.packaging, reduced: reducedEmissions.packaging },
-      { name: 'Fuel', current: currentEmissions.fuel, reduced: reducedEmissions.fuel },
+      { name: 'Plastic Packaging', current: currentEmissions.packaging, reduced: reducedEmissions.packaging },
+      { name: 'Diesel', current: currentEmissions.diesel, reduced: reducedEmissions.diesel },
       { name: 'Cardboard', current: currentEmissions.cardboard, reduced: reducedEmissions.cardboard }
     ];
 
@@ -1113,7 +1150,7 @@ const SmartWarehouseTracker = () => {
       setReductionFactors({
         electricity: 0,
         packaging: 0,
-        fuel: 0,
+        diesel: 0,
         cardboard: 0
       });
     };
@@ -1244,7 +1281,7 @@ const SmartWarehouseTracker = () => {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-800 mb-2">Fuel Reduction:</h4>
+                <h4 className="font-semibold text-gray-800 mb-2">Diesel Reduction:</h4>
                 <ul className="space-y-1 text-gray-600">
                   <li>• Optimize delivery routes</li>
                   <li>• Use electric vehicles</li>
@@ -1539,7 +1576,7 @@ const SmartWarehouseTracker = () => {
             <ul className="space-y-3 text-lg">
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-green-500 rounded-full mt-3 mr-3 flex-shrink-0"></span>
-                <span><strong>Real-time Carbon Tracking:</strong> Monitor emissions from electricity consumption, packaging materials, fuel usage, and other warehouse activities</span>
+                <span><strong>Real-time Carbon Tracking:</strong> Monitor emissions from electricity consumption, packaging materials, diesel usage, and other warehouse activities</span>
               </li>
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-green-500 rounded-full mt-3 mr-3 flex-shrink-0"></span>
@@ -1562,7 +1599,7 @@ const SmartWarehouseTracker = () => {
               <div className="bg-green-50 p-6 rounded-lg">
                 <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xl mb-4">1</div>
                 <h4 className="font-semibold text-gray-800 mb-2">Input Data</h4>
-                <p>Enter your warehouse operation data including electricity usage, packaging materials, and fuel consumption.</p>
+                <p>Enter your warehouse operation data including electricity usage, packaging materials, and diesel consumption.</p>
               </div>
               <div className="bg-blue-50 p-6 rounded-lg">
                 <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xl mb-4">2</div>
