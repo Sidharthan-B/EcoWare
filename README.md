@@ -2,6 +2,8 @@
 
 A comprehensive carbon emissions tracking and demand analytics dashboard for warehouses. This React application helps warehouse managers monitor their environmental impact and optimize operations through real-time data visualization.
 
+DEMO Link hosted on Netlify - https://ecoware.netlify.app/
+
 ## 🚀 Features
 
 ### 🏭 Carbon Emissions Tracking
