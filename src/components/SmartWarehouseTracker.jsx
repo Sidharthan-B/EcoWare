@@ -3,6 +3,7 @@ import { Home, Edit, Plus, Minus, Package, TrendingUp, Leaf, Clock, Flame, Snowf
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import ecowareLogo from '../assets/ecoware-logo.png';
 import treeLogo from '../assets/tree.png';
+import AIEmissionAdvisor from './AIEmissionAdvisor';
 
 const SmartWarehouseTracker = () => {
   const [currentPage, setCurrentPage] = useState('intro');
@@ -1744,6 +1745,9 @@ const SmartWarehouseTracker = () => {
       {currentPage === 'demand-forecasting' && <DemandForecastingPage />}
       {currentPage === 'total' && <TotalPage />}
       {currentPage === 'about' && <AboutPage />}
+
+      {/* AI Emission Advisor - Available on all pages */}
+      <AIEmissionAdvisor warehouseData={warehouseData} totalCarbon={totalCarbon} />
     </div>
   );
 };
